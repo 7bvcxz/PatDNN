@@ -118,6 +118,7 @@ def apply_prune(args, model, device, pattern_set):
             param.data.mul_(mask)
             # param.data = torch.Tensor(weight_pruned).to(device)
             dict_mask[name] = mask
+    return dict_mask
 
     
 def print_convergence(model, X, Z):

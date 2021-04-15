@@ -27,20 +27,17 @@ def train(args, model, device, pattern_set, train_loader, test_loader, optimizer
         loss.backward()
         optimizer.step()
        
-    print("\nget X...")
     X = update_X(model)
-    print("updated X")
 
-    print("\nupdate Z, Y...")
+    print("update Z, Y, U, V...")
     Z = update_Z(X, U, pattern_set, args)
     print("updated Z")
     Y = update_Y(X, V, args)
     print("updated Y")
 
-    print("\nupdate U, V...")
     U = update_U(U, X, Z)
     V = update_V(V, X, Y)
-    print("updated")
+    print("updated U V")
 
 
 def test(args, model, device, test_loader):
@@ -58,7 +55,7 @@ def test(args, model, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
     prec = 100. * correct / len(test_loader.dataset)
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), prec))
 
     return prec
@@ -90,7 +87,7 @@ parser.add_argument('--model',      default='vgg16_bn',         help='select mod
 parser.add_argument('--dir',        default='~/data',           help='data root')
 parser.add_argument('--dataset',    default='cifar10',          help='select dataset')
 parser.add_argument('--batchsize',  default=256, type=int,      help='set batch size')
-parser.add_argument('--lr',         default=1e-4, type=float,   help='set learning rate')
+parser.add_argument('--lr',         default=3e-4, type=float,   help='set learning rate')
 parser.add_argument('--alpha',      default=5e-4, type=float,   help='set l2 regularization alpha')
 parser.add_argument('--adam_epsilon', default=1e-8, type=float, help='adam epsilon')
 parser.add_argument('--rho',        default=1e-2, type=float,   help='set rho')
@@ -104,14 +101,14 @@ parser.add_argument('--scratch',    default=False, action='store_true', help='st
 parser.add_argument('--no-cuda',    default=False, action='store_true', help='disables CUDA training')
 args = parser.parse_args()
 print(args)
+comment = "helloEveryone"
 
 if args.exp == 'test':
     args.exp = f'{args.exp}-{time.strftime("%y%m%d-%H%M%S")}'
-args.save = f'logs/{args.dataset}/{args.model}/{args.exp}'
+args.save = f'logs/{args.dataset}/{args.model}/{args.exp}_lr{str(args.lr)}_{comment}'
 create_exp_dir(args.save)
 
 args.workers = 16
-args.save = f'logs/{args.dataset}/{args.exp}'
 
 torch.manual_seed(1)
 torch.cuda.manual_seed(1)
@@ -165,7 +162,7 @@ pre_model.cuda()
 
 
 # History collector
-history_score = np.zeros(args.epoch)
+history_score = np.zeros((args.epoch+1, 2))
 
 
 # Optimizer
@@ -177,7 +174,9 @@ print('\nTraining...') ##### ##### ##### ##### #####
 best_prec = 0
 Z, Y, U, V = initialize_Z_Y_U_V(model)
 
+print('Pre_model:')
 test(args, pre_model, device, test_loader)
+print('Our_model:')
 test(args, model, device, test_loader)
 
 for epoch in range(args.epoch):
@@ -190,12 +189,13 @@ for epoch in range(args.epoch):
 
     print("\ntesting...")
     prec = test(args, model, device, test_loader)
-    history_score[epoch] = prec
+    history_score[epoch][0] = epoch
+    history_score[epoch][1] = prec
 
     if prec > best_prec:
         best_prec = prec
         torch.save(model.state_dict(), os.path.join(args.save, 'cifar10_best.pth.tar'))
-np.savetxt(os.path.join(args.save, 'train_record.txt'), history_score, fmt='%10.5f')
+
 
 
 # Real Pruning ! ! !
@@ -206,11 +206,19 @@ print_prune(model)
 print("\ntesting...")
 test(args, model, device, test_loader)
 
-# Optimizer
+# Optimizer for Retrain
 optimizer = PruneAdam(model.named_parameters(), lr=args.lr, eps=args.adam_epsilon)
 # optimizer = optim.Adam(model.parameters(), args.lr)
 
 print("\nfine-tuning...")
 retrain(args, model, mask, device, train_loader, test_loader, optimizer)
+
+prec = test(args, model, device, test_loader)
+history_score[args.epoch][0] = 0
+history_score[args.epoch][1] = prec
+np.savetxt(os.path.join(args.save, 'train_record.txt'), history_score, fmt='%10.5f', delimiter=',')
+
+
+
 
 
