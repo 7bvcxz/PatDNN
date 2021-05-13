@@ -1,0 +1,18 @@
+check1 -> original
+check2 -> high lr
+check3 -> high rho(x5) + more fine-tuning epoch(40->60)
+check4 -> more higher rho(=1) 
+check5 -> rho(=1000, 10000) 
+
+	check1		check2		check3		check4		check5
+3e-3			73.10.30
+1e-3			91.10.71					 
+6e-4			93.10.76	9X.10.81	94.10.82	10000
+3e-4	9x.10.10			9X.10.10	94.10.10	1000 10000
+1e-4	9x.10.10			9X.10.10	94.10.10
+6e-5	9x.10.10
+3e-5	9x.10.10
+1e-5	9x.10.10
+6e-6
+3e-6
+1e-6
