@@ -54,7 +54,7 @@ def pattern_setter(model, num_sets=8):
     
     return pattern_set
 
-
+"""
 def top_4_pat(arr, pattern_set):    # input arr : (d, ch, 3, 3)   pattern_set : (6~8, 9) (9 is 3x3)
     cpy_arr = arr.copy().reshape(-1, 1, 9)
     new_arr = np.zeros(cpy_arr.shape)
@@ -72,6 +72,7 @@ def top_4_pat(arr, pattern_set):    # input arr : (d, ch, 3, 3)   pattern_set : 
     new_arr = new_arr.reshape(arr.shape)
     return new_arr
 
+
 def top_k_kernel(arr, perc):    # input (d, ch, 3, 3)
     k = math.ceil(arr.shape[0] * arr.shape[1] / perc)
     new_arr = arr.copy().reshape(-1, 1, 9)    # (d*ch, 1, 9)
@@ -87,4 +88,41 @@ def top_k_kernel(arr, perc):    # input (d, ch, 3, 3)
     
     new_arr = new_arr.reshape(arr.shape)
     return new_arr
+"""
+
+# new !!!!!!!!!  I wanna test it!
+def top_4_pat(arr, pattern_set):    # input arr : (d, ch, 3, 3)   pattern_set : (6~8, 9) (9 is 3x3)
+    cpy_arr = arr.copy().reshape(-1, 9)
+    new_arr = np.zeros(cpy_arr.shape)
+    pat_set = pattern_set.copy().reshape(-1, 9)
+
+    for i in range(len(cpy_arr)):
+        pat_arr = cpy_arr[i] * pat_set
+        pat_arr = np.linalg.norm(pat_arr, axis=1)
+        pat_idx = np.argmax(pat_arr)
+
+        new_arr[i] = cpy_arr[i] * pat_set[pat_idx]
+
+    new_arr = new_arr.reshape(arr.shape)
+    return new_arr
+
+
+def top_k_kernel(arr, perc):    # input (d, ch, 3, 3)
+    k = math.ceil(arr.shape[0] * arr.shape[1] / perc)
+    new_arr = arr.copy().reshape(-1, 9)    # (d*ch, 9)
+
+    l2_arr = np.linalg.norm(new_arr, axis=1)
+    threshold = l2_arr[np.argsort(-l2_arr)[k-1]]
+
+    print(l2_arr.shape)
+    print(new_arr.shape)
+    new_arr = new_arr * (l2_arr >= threshold)
+    print(new_arr.shape)
+    new_arr = new_arr.reshape(arr.shape)
+    return new_arr
+
+
+
+
+
 

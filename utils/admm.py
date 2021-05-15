@@ -14,7 +14,6 @@ def regularized_nll_loss(args, model, output, target):
                 idx += 1
     return loss
 
-
 def admm_loss(args, device, model, Z, Y, U, V, output, target):
     idx = 0
     #loss = F.nll_loss(output, target)
@@ -27,7 +26,7 @@ def admm_loss(args, device, model, Z, Y, U, V, output, target):
             u = U[idx].to(device)
             v = V[idx].to(device)
 
-            loss += args.rho / 2 * (param - z + u).norm() + args.rho / 2 * (param - y + v).norm()
+            loss += args.rho * 0.5 * (param - z + u).norm() + args.rho * 0.5 * (param - y + v).norm()
             idx += 1
             
         if args.l2:
@@ -143,5 +142,38 @@ def print_prune(model):
     print("total nonzero parameters after pruning: {} / {} ({:.4f}%)".
           format(prune_param, total_param,
                  100 * (total_param - prune_param) / total_param))
+
+
+
+
+
+##### for 'main_loss3.py test' #####
+def admm_lossc(args, device, model, Z, Y, U, V, output, target):
+    loss = F.cross_entropy(output, target)
+    return loss
+
+def admm_lossz(args, device, model, Z, Y, U, V, output, target):
+    idx = 0
+    loss = 0
+    for name, param in model.named_parameters():
+        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+            z = Z[idx].to(device)
+            u = U[idx].to(device)
+
+            loss += args.rho * 0.5 * (param - z + u).norm()
+            idx += 1
+    return loss
+
+def admm_lossy(args, device, model, Z, Y, U, V, output, target):
+    idx = 0
+    loss = 0
+    for name, param in model.named_parameters():
+        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+            y = Y[idx].to(device)
+            v = V[idx].to(device)
+
+            loss += args.rho * 0.5 * (param - y + v).norm()
+            idx += 1
+    return loss
 
 
