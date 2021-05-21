@@ -4,19 +4,11 @@ import numpy as np
 from .pattern_setter import *
 
 def regularized_nll_loss(args, model, output, target):
-    idx = 0
-    #loss = F.nll_loss(output, target)
     loss = F.cross_entropy(output, target)
-    if args.l2:
-        for name, param in model.named_parameters():
-            if name.split('.')[-1] == "weight":
-                loss += args.alpha * param.norm()
-                idx += 1
     return loss
 
 def admm_loss(args, device, model, Z, Y, U, V, output, target):
     idx = 0
-    #loss = F.nll_loss(output, target)
     loss = F.cross_entropy(output, target)
     
     for name, param in model.named_parameters():
@@ -28,11 +20,6 @@ def admm_loss(args, device, model, Z, Y, U, V, output, target):
 
             loss += args.rho * 0.5 * (param - z + u).norm() + args.rho * 0.5 * (param - y + v).norm()
             idx += 1
-            
-        if args.l2:
-            if name.split('.')[-1] == "weight":
-                loss += args.alpha * param.norm()
-            
     return loss
 
 
@@ -142,8 +129,6 @@ def print_prune(model):
     print("total nonzero parameters after pruning: {} / {} ({:.4f}%)".
           format(prune_param, total_param,
                  100 * (total_param - prune_param) / total_param))
-
-
 
 
 

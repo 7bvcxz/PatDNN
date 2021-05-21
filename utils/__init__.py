@@ -4,3 +4,4 @@ from .admm              import *
 from .optimizer         import *
 from .util              import *
 from .vgg               import *
+from .lenet             import *

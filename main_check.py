@@ -26,16 +26,21 @@ def train(args, model, device, pattern_set, train_loader, test_loader, optimizer
         loss = admm_loss(args, device, model, Z, Y, U, V, output, target)
         loss.backward()
         optimizer.step()
+    #print('Z')
+    #print(Z)
+    #print('Y')
+    #print(Y)
+    #print("updated U V")
 
 
-def ttest(args, model, device, test_loader, pattern_set, Z, Y, U, V):
+def ttest(args, model, device, test_loader, Z, Y, U, V):
     model.eval()
     test_loss = 0
     loss_c = 0
     loss_z = 0
     loss_y = 0
     correct = 0
-    with torch.no_grad():   # No Training
+    with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
@@ -73,19 +78,18 @@ def test(args, model, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
     prec = 100. * correct / len(test_loader.dataset)
-    print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.4f}%)'.format(
-           test_loss, correct, len(test_loader.dataset), prec))
+    #print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    #    test_loss, correct, len(test_loader.dataset), prec))
 
     return prec
 
 
 def retrain(args, model, mask, device, train_loader, test_loader, optimizer):
     model.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
+    for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
-        #loss = regularized_nll_loss(args, model, F.log_softmax(output, dim=1), target)
         loss = regularized_nll_loss(args, model, output, target)
         loss.backward()
         optimizer.prune_step(mask)
@@ -97,12 +101,12 @@ parser.add_argument('--model',      default='vgg16_bn',         help='select mod
 parser.add_argument('--dir',        default='~/data',           help='dataset root')
 parser.add_argument('--dataset',    default='cifar10',          help='select dataset')
 parser.add_argument('--batchsize',  default=256, type=int,      help='set batch size')
-parser.add_argument('--lr',         default=6e-5, type=float,   help='set learning rate')
+parser.add_argument('--lr',         default=3e-4, type=float,   help='set learning rate')
 parser.add_argument('--re_lr',      default=1e-4, type=float,   help='set fine learning rate')
 parser.add_argument('--alpha',      default=5e-4, type=float,   help='set l2 regularization alpha')
 parser.add_argument('--adam_epsilon', default=1e-8, type=float, help='adam epsilon')
-parser.add_argument('--rho',        default=6e-1, type=float,   help='set rho')
-#parser.add_argument('--rho',        default=1000, type=float,   help='set rho')
+#parser.add_argument('--rho',        default=1e-2, type=float,   help='set rho')
+parser.add_argument('--rho',        default=1000, type=float,   help='set rho')
 parser.add_argument('--connect_perc',  default=3.6, type=float, help='connectivity pruning ratio')
 parser.add_argument('--epoch',      default=120, type=int,      help='set epochs')
 parser.add_argument('--re_epoch',   default=60, type=int,       help='set retrain epochs')
@@ -113,7 +117,7 @@ parser.add_argument('--scratch',    default=False, action='store_true', help='st
 parser.add_argument('--no-cuda',    default=False, action='store_true', help='disables CUDA training')
 args = parser.parse_args()
 print(args)
-comment = "check11"
+comment = "check6"
 
 if args.exp == 'test':
     args.exp = f'{args.exp}-{time.strftime("%y%m%d-%H%M%S")}'
@@ -171,55 +175,55 @@ pre_model.cuda()
 
 
 # History collector
-history_score = np.zeros((200, 2))
-his_idx = 0
+history_score = np.zeros((args.epoch+args.re_epoch+1, 2))
 
 
-print('lr:', args.lr, 'rho:', args.rho)
-print('\nTraining...') ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
-best_prec = 0
-Z, Y, U, V = initialize_Z_Y_U_V(model)
-
-#WarmUp
-#optimizer = PruneAdam(model.named_parameters(), lr=1e-6, eps=args.adam_epsilon)
-optimizer = PruneAdam(model.named_parameters(), lr=1e-5, eps=args.adam_epsilon)
-for epoch in range(5):
-    train(args, model, device, pattern_set, train_loader, test_loader, optimizer, Z, Y, U, V)
-       
-    X = update_X(model)
-    Z = update_Z(X, U, pattern_set, args)
-    Y = update_Y(X, V, args)
-
-    prec = ttest(args, model, device, test_loader, pattern_set, Z, Y, U, V)
-    history_score[his_idx][0] = epoch
-    history_score[his_idx][1] = prec
-    his_idx += 1
- 
 # Optimizer
 optimizer = PruneAdam(model.named_parameters(), lr=args.lr, eps=args.adam_epsilon)
 
+
+print('lr:', args.lr, 'rho:', args.rho)
+#print('\nTraining...') ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+best_prec = 0
+Z, Y, U, V = initialize_Z_Y_U_V(model)
+
+print(">> Z=Y=X")
+#ttest(args, model, device, test_loader, Z, Y, U, V)
+
+#X = update_X(model)
+#Z = update_Z(X, U, pattern_set, args)
+#Y = update_Y(X, V, args)
+
+print(">> After Z, Y update")
+#ttest(args, model, device, test_loader, Z, Y, U, V)
+
+print(">> Real training thing!")
 for epoch in range(args.epoch):
+    #print("Epoch: {} with lr: {}".format(epoch+1, args.lr))
     if epoch in [args.epoch//4, args.epoch//2, args.epoch//4*3]:
         for param_group in optimizer.param_groups:
             param_group['lr'] *= 0.1
     
-    train(args, model, device, pattern_set, train_loader, test_loader, optimizer, Z, Y, U, V)
-       
+    train(args, model, device, pattern_set, train_loader, test_loader, optimizer, Z, Y, U, V) 
+    
     X = update_X(model)
+
+    #print("update Z, Y, U, V...")
     Z = update_Z(X, U, pattern_set, args)
+    #print("updated Z")
     Y = update_Y(X, V, args)
+    #print("updated Y")
+
     U = update_U(U, X, Z)
     V = update_V(V, X, Y)
 
-    prec = ttest(args, model, device, test_loader, pattern_set, Z, Y, U, V)
-    history_score[his_idx][0] = epoch
-    history_score[his_idx][1] = prec
-    his_idx += 1
-    
-create_exp_dir(args.save)
-torch.save(model.state_dict(), os.path.join(args.save, 'cifar10_before.pth.tar'))
+    print('Z')
+    print(Z)
+    print('Y')
+    print(Y)
+    ttest(args, model, device, test_loader, Z, Y, U, V)
 
-
+"""
 # Real Pruning ! ! !
 print("\nApply Pruning with connectivity & pattern set...")
 mask = apply_prune(args, model, device, pattern_set)
@@ -243,16 +247,17 @@ optimizer = PruneAdam(model.named_parameters(), lr=args.re_lr, eps=args.adam_eps
 print("\nfine-tuning...")
 best_prec = 0
 for epoch in range(args.re_epoch):
+    print("Epoch: {} with re_lr: {}".format(epoch+1, args.re_lr))
     if epoch in [args.re_epoch//4, args.re_epoch//2, args.re_epoch//4*3]:
         for param_group in optimizer.param_groups:
             param_group['lr'] *= 0.1
 
     retrain(args, model, mask, device, train_loader, test_loader, optimizer)
 
+    print("\ntesting...")
     prec = test(args, model, device, test_loader)
-    history_score[his_idx][0] = epoch
-    history_score[his_idx][1] = prec
-    his_idx += 1
+    history_score[args.epoch + epoch][0] = epoch
+    history_score[args.epoch + epoch][1] = prec
     
     if prec > best_prec:
         best_prec = prec
@@ -260,7 +265,7 @@ for epoch in range(args.re_epoch):
 
 np.savetxt(os.path.join(args.save, 'train_record.txt'), history_score, fmt='%10.5f', delimiter=',')
 
-
+"""
 ############################################
 
 # my mistake 1 - making mask.pickle

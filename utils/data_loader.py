@@ -50,6 +50,18 @@ def data_loader(dir, dataset, batch_size, workers):
         ])
         train_set = datasets.ImageFolder(traindir, transform=train_transform)
         val_set = datasets.ImageFolder(valdir, transform=val_transform)
+    elif dataset == 'mnist':
+        train_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+            ])
+        val_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+            ])
+        train_set = datasets.MNIST(root=dir, train=True, download=True, transform=train_transform)
+        val_set = datasets.MNIST(root=dir, train=False, download=False, transform=val_transform)
+           
     else:
         assert False, 'No Such Dataset'
         

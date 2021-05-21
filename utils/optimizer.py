@@ -374,7 +374,7 @@ class PruneAdam(NameOptimizer):
                 exp_avg.mul_(beta1).add_(1 - beta1, grad)
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
 
-                if name.split('.')[-1] == "weight" and name.split('.')[0] == "feature" and len(param.shape) == 4: ############# changed by me! ######
+                if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(p.shape) == 4: ############# changed by me! ######
                     exp_avg_sq.mul_(mask[name])
 
                 if amsgrad:
@@ -389,7 +389,7 @@ class PruneAdam(NameOptimizer):
                 bias_correction2 = 1 - beta2 ** state['step']
                 step_size = group['lr'] * math.sqrt(bias_correction2) / bias_correction1
 
-                if name.split('.')[-1] == "weight" and name.split('.')[0] == "feature" and len(param.shape) == 4: ########## changed here too ######
+                if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(p.shape) == 4: ########## changed here too ######
                     exp_avg.mul_(mask[name])
                 p.data.addcdiv_(-step_size, exp_avg, denom)
 

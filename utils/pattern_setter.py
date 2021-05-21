@@ -90,6 +90,7 @@ def top_k_kernel(arr, perc):    # input (d, ch, 3, 3)
     return new_arr
 """
 
+
 # new !!!!!!!!!  I wanna test it!
 def top_4_pat(arr, pattern_set):    # input arr : (d, ch, 3, 3)   pattern_set : (6~8, 9) (9 is 3x3)
     cpy_arr = arr.copy().reshape(-1, 9)
@@ -114,10 +115,11 @@ def top_k_kernel(arr, perc):    # input (d, ch, 3, 3)
     l2_arr = np.linalg.norm(new_arr, axis=1)
     threshold = l2_arr[np.argsort(-l2_arr)[k-1]]
 
-    print(l2_arr.shape)
-    print(new_arr.shape)
-    new_arr = new_arr * (l2_arr >= threshold)
-    print(new_arr.shape)
+    l2_arr = l2_arr >= threshold
+    l2_arr = l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr
+    l2_arr = np.transpose(np.array(l2_arr))
+    
+    new_arr = new_arr * l2_arr
     new_arr = new_arr.reshape(arr.shape)
     return new_arr
 

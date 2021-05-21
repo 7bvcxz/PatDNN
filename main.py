@@ -23,7 +23,6 @@ def train(args, model, device, pattern_set, train_loader, test_loader, optimizer
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
-        #loss = admm_loss(args, device, model, Z, Y, U, V, F.log_softmax(output, dim=1), target)
         loss = admm_loss(args, device, model, Z, Y, U, V, output, target)
         loss.backward()
         optimizer.step()
