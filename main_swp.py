@@ -94,11 +94,11 @@ parser.add_argument('--model',      default='vgg16_bn',         help='select mod
 parser.add_argument('--dir',        default='~/data',           help='dataset root')
 parser.add_argument('--dataset',    default='cifar10',          help='select dataset')
 parser.add_argument('--batchsize',  default=256, type=int,      help='set batch size')
-parser.add_argument('--lr',         default=6e-5, type=float,   help='set learning rate')
+parser.add_argument('--lr',         default=1e-4, type=float,   help='set learning rate')
 parser.add_argument('--re_lr',      default=1e-4, type=float,   help='set fine learning rate')
 parser.add_argument('--alpha',      default=5e-4, type=float,   help='set l2 regularization alpha')
 parser.add_argument('--adam_epsilon', default=1e-8, type=float, help='adam epsilon')
-parser.add_argument('--rho',        default=6e-1, type=float,   help='set rho')
+parser.add_argument('--rho',        default=10, type=float,   help='set rho')
 #parser.add_argument('--rho',        default=1000, type=float,   help='set rho')
 parser.add_argument('--connect_perc',  default=3.6, type=float, help='connectivity pruning ratio')
 parser.add_argument('--epoch',      default=120, type=int,      help='set epochs')
@@ -114,7 +114,7 @@ comment = "check12"
 
 if args.exp == 'test':
     args.exp = f'{args.exp}-{time.strftime("%y%m%d-%H%M%S")}'
-args.save = f'logs/{args.dataset}/{args.model}/{args.exp}_lr{str(args.lr)}_rls{str(args.re_lr)}_{comment}'
+args.save = f'logs/{args.dataset}/{args.model}/{args.exp}_lr{str(args.lr)}_rho{str(args.rho)}_{comment}'
 
 args.workers = 16
 
