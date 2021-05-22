@@ -131,6 +131,39 @@ def print_prune(model):
                  100 * (total_param - prune_param) / total_param))
 
 
+##### for 'main_swp.py' #####
+def update_Z_swp(X, U, pattern_set, args):
+    new_Z = ()
+    for x, u in zip(X, U):
+        z = x + u
+        
+        # Select each kernel and prune -> z = torch.tensor (a, b, 3, 3)
+        z = torch.from_numpy(top_4_pat_swp(z.numpy(), pattern_set))
+
+        new_Z += (z,)
+    return new_Z
+
+def apply_prune_swp(args, model, device, pattern_set):
+    # returns dictionary of non_zero_values' indices
+    dict_mask = {}
+    for name, param in model.named_parameters():
+        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+            mask = prune_weight_swp(param, device, args.connect_perc, pattern_set)
+            param.data.mul_(mask)
+            # param.data = torch.Tensor(weight_pruned).to(device)
+            dict_mask[name] = mask
+    return dict_mask
+
+def prune_weight_swp(weight, device, percent, pattern_set):
+    # to work with admm, we calculate percentile based on all elements instead of nonzero elements.
+    weight_numpy = weight.detach().cpu().numpy()
+
+    weight_numpy = top_k_kernel(weight_numpy, percent)
+    weight_numpy = top_4_pat_swp(weight_numpy, pattern_set)
+    
+    mask = torch.Tensor(weight_numpy != 0).to(device)
+    return mask
+
 
 ##### for 'main_loss3.py test' #####
 def admm_lossc(args, device, model, Z, Y, U, V, output, target):
