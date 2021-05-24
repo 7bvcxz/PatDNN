@@ -171,7 +171,7 @@ pre_model.cuda()
 history_score = np.zeros((200, 2))
 his_idx = 0
 
-print('SWP version..!!')
+print('SWP')
 print('lr:', args.lr, 'rho:', args.rho)
 print('\nTraining...') ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 best_prec = 0
@@ -257,6 +257,7 @@ for epoch in range(args.re_epoch):
 
 np.savetxt(os.path.join(args.save, 'train_record.txt'), history_score, fmt='%10.5f', delimiter=',')
 
+print('SWP lr:', args.lr, 'rho:', args.rho)
 
 ############################################
 

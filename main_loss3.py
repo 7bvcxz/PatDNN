@@ -73,8 +73,7 @@ def test(args, model, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
     prec = 100. * correct / len(test_loader.dataset)
-    print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.4f}%)'.format(
-           test_loss, correct, len(test_loader.dataset), prec))
+    print('Accuracy: {:.2f}, Cross Entropy: {:f}'.format(prec, test_loss))
 
     return prec
 
@@ -113,11 +112,11 @@ parser.add_argument('--scratch',    default=False, action='store_true', help='st
 parser.add_argument('--no-cuda',    default=False, action='store_true', help='disables CUDA training')
 args = parser.parse_args()
 print(args)
-comment = "check11"
+comment = "check11_patdnn"
 
 if args.exp == 'test':
     args.exp = f'{args.exp}-{time.strftime("%y%m%d-%H%M%S")}'
-args.save = f'logs/{args.dataset}/{args.model}/{args.exp}_lr{str(args.lr)}_rls{str(args.re_lr)}_{comment}'
+args.save = f'logs/{args.dataset}/{args.model}/{args.exp}_lr{str(args.lr)}_rho{str(args.rho)}_{comment}'
 
 args.workers = 16
 
@@ -174,7 +173,7 @@ pre_model.cuda()
 history_score = np.zeros((200, 2))
 his_idx = 0
 
-
+print('patdnn')
 print('lr:', args.lr, 'rho:', args.rho)
 print('\nTraining...') ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 best_prec = 0
@@ -260,6 +259,7 @@ for epoch in range(args.re_epoch):
 
 np.savetxt(os.path.join(args.save, 'train_record.txt'), history_score, fmt='%10.5f', delimiter=',')
 
+print('patdnn lr:', args.lr, 'rho:', args.rho)
 
 ############################################
 
