@@ -12,7 +12,7 @@ def admm_loss(args, device, model, Z, Y, U, V, output, target):
     loss = F.cross_entropy(output, target)
     
     for name, param in model.named_parameters():
-        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+        if name.split('.')[-1] == "weight" and len(param.shape) == 4 and 'downsample' not in name:
             z = Z[idx].to(device)
             y = Y[idx].to(device)
             u = U[idx].to(device)
@@ -29,7 +29,7 @@ def initialize_Z_Y_U_V(model):
     U = ()
     V = ()
     for name, param in model.named_parameters():
-        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+        if name.split('.')[-1] == "weight" and len(param.shape) == 4 and 'downsample' not in name:
             Z += (param.detach().cpu().clone(),)
             Y += (param.detach().cpu().clone(),)
             U += (torch.zeros_like(param).cpu(),)
@@ -40,7 +40,7 @@ def initialize_Z_Y_U_V(model):
 def update_X(model):
     X = ()
     for name, param in model.named_parameters():
-        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+        if name.split('.')[-1] == "weight" and len(param.shape) == 4 and 'downsample' not in name:
             X += (param.detach().cpu().clone(),)
     return X
 
@@ -50,7 +50,7 @@ def update_Z(X, U, pattern_set, args):
     for x, u in zip(X, U):
         z = x + u
         
-        # Select each kernel and prune -> z = torch.tensor (a, b, 3, 3)
+        # Select each kernel and prune -> z = torch.tensor (a, b, 3, 3) or (a, b, 1, 1)
         z = torch.from_numpy(top_4_pat(z.numpy(), pattern_set))
 
         new_Z += (z,)
@@ -62,7 +62,7 @@ def update_Y(X, V, args):
     for x, v in zip(X, V):
         y = x + v
 
-        # Prune kernel by l2 -> y = torch.tensor (a, b, 3, 3) 
+        # Prune kernel by l2 -> y = torch.tensor (a, b, 3, 3) or (a, b, 1, 1) 
         y = torch.from_numpy(top_k_kernel(y.numpy(), args.connect_perc)) 
 
         new_Y += (y,)
@@ -99,7 +99,7 @@ def apply_prune(args, model, device, pattern_set):
     # returns dictionary of non_zero_values' indices
     dict_mask = {}
     for name, param in model.named_parameters():
-        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+        if name.split('.')[-1] == "weight" and len(param.shape) == 4 and 'downsample' not in name:
             mask = prune_weight(param, device, args.connect_perc, pattern_set)
             param.data.mul_(mask)
             # param.data = torch.Tensor(weight_pruned).to(device)
@@ -147,7 +147,7 @@ def apply_prune_swp(args, model, device, pattern_set):
     # returns dictionary of non_zero_values' indices
     dict_mask = {}
     for name, param in model.named_parameters():
-        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+        if name.split('.')[-1] == "weight" and len(param.shape) == 4 and 'downsample' not in name:
             mask = prune_weight_swp(param, device, args.connect_perc, pattern_set)
             param.data.mul_(mask)
             # param.data = torch.Tensor(weight_pruned).to(device)
@@ -174,7 +174,7 @@ def admm_lossz(args, device, model, Z, Y, U, V, output, target):
     idx = 0
     loss = 0
     for name, param in model.named_parameters():
-        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+        if name.split('.')[-1] == "weight" and len(param.shape) == 4 and 'downsample' not in name:
             z = Z[idx].to(device)
             u = U[idx].to(device)
 
@@ -186,7 +186,7 @@ def admm_lossy(args, device, model, Z, Y, U, V, output, target):
     idx = 0
     loss = 0
     for name, param in model.named_parameters():
-        if name.split('.')[-1] == "weight" and name.split('.')[0] == "features" and len(param.shape) == 4:
+        if name.split('.')[-1] == "weight" and len(param.shape) == 4 and 'downsample' not in name:
             y = Y[idx].to(device)
             v = V[idx].to(device)
 
