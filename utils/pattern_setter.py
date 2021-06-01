@@ -21,15 +21,14 @@ def get_pattern(patterns, arr):               # input : (?, 1, 9) / output : (?,
 
 
 def top_4(arr):                     # input : (d, ch, 1, 9) / output : (d*ch, 1, 9)
-    print(arr.shape)
     arr = arr.reshape(-1,1,9)
-    l = len(arr)
-
-    for i in range(l):
+    arr = abs(arr)
+    for i in range(len(arr)):
+        arr[i][0][4] = 0
         x = arr[i].copy()
         x.sort()
-        arr[i]=np.where(arr[i]<x[0][5], 0, 1)
-
+        arr[i]=np.where(arr[i]<x[0][6], 0, 1)
+        arr[i][0][4] = 1
     return arr                     
 
 
@@ -53,9 +52,7 @@ def pattern_setter(model, num_sets=8):
 
 # new !!!!!!!!!  I wanna test it!
 def top_4_pat(arr, pattern_set):    # input arr : (d, ch, 3, 3) or (d, ch, 1, 1)   pattern_set : (6~8, 9)
-    if arr.shape[2] == 1:
-        return arr
-    elif arr.shape[2] == 3:
+    if arr.shape[2] == 3:
         cpy_arr = arr.copy().reshape(-1, 9)
         new_arr = np.zeros(cpy_arr.shape)
         pat_set = pattern_set.copy().reshape(-1, 9)
@@ -69,33 +66,38 @@ def top_4_pat(arr, pattern_set):    # input arr : (d, ch, 3, 3) or (d, ch, 1, 1)
 
         new_arr = new_arr.reshape(arr.shape)
         return new_arr
-
+    else:
+        return arr
+        
 
 def top_k_kernel(arr, perc):    # input (d, ch, 3, 3)
-    k = math.ceil(arr.shape[0] * arr.shape[1] / perc)
     if arr.shape[2] == 1:
         new_arr = arr.copy().reshape(-1, 1)    # (d*ch, 1)
-    elif arr.shape[2] == 1:
+    elif arr.shape[2] == 3:
         new_arr = arr.copy().reshape(-1, 9)    # (d*ch, 9)
+    else:
+        return arr
 
+    k = math.ceil(arr.shape[0] * arr.shape[1] / perc)
     l2_arr = np.linalg.norm(new_arr, axis=1)
     threshold = l2_arr[np.argsort(-l2_arr)[k-1]]
-
     l2_arr = l2_arr >= threshold
-    if arr.shape[2] == 3:
-        l2_arr = l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr
-    l2_arr = np.transpose(np.array(l2_arr))
     
-    new_arr = new_arr * l2_arr
+    if arr.shape[2] == 1:
+        new_arr = new_arr.reshape(-1) * l2_arr
+
+    elif arr.shape[2] == 3:
+        l2_arr = l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr, l2_arr
+        l2_arr = np.transpose(np.array(l2_arr))
+        new_arr = new_arr * l2_arr
+   
     new_arr = new_arr.reshape(arr.shape)
     return new_arr
 
 
 ##### for 'main_swp.py' #####
 def top_4_pat_swp(arr, pattern_set):   # input arr : (d, ch, 3, 3) or (d, ch, 1, 1)  pattern_set : (6~8, 9)
-    if arr.shape[2] == 1:
-        return arr
-    elif arr.shape[2] == 3:
+    if arr.shape[2] == 3:
         cpy_arr = arr.copy().reshape(len(arr), -1, 9)
         new_arr = np.zeros(cpy_arr.shape)
         pat_set = pattern_set.copy().reshape(-1, 9)
@@ -112,7 +114,8 @@ def top_4_pat_swp(arr, pattern_set):   # input arr : (d, ch, 3, 3) or (d, ch, 1,
 
         new_arr = new_arr.reshape(arr.shape)
         return new_arr
-
+    else:
+        return arr
 
 
 

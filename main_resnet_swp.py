@@ -77,7 +77,7 @@ def test(args, model, device, test_loader):
             _, pred = output.topk(maxk, 1, True, True)
             pred = pred.t()
             correct_5 = pred.eq(target.view(1, -1).expand_as(pred))
-            correct_5 = correct_5.int().sum(0)
+            correct_6 = correct_5.int().sum(0)
             correct += correct_5.sum().item()
             
 
@@ -101,10 +101,10 @@ def retrain(args, model, mask, device, train_loader, test_loader, optimizer):
 
 ##### Settings #########################################################################
 parser = argparse.ArgumentParser(description='Pytorch PatDNN training')
-parser.add_argument('--model',      default='resnet50',        help='select model')
+parser.add_argument('--model',      default='resnet50',         help='select model')
 parser.add_argument('--dir',        default='/./data',          help='dataset root')
 parser.add_argument('--dataset',    default='imagenet',         help='select dataset')
-parser.add_argument('--batchsize',  default=64, type=int,      help='set batch size')
+parser.add_argument('--batchsize',  default=64, type=int,       help='set batch size')
 parser.add_argument('--lr',         default=1e-5, type=float,   help='set learning rate')
 parser.add_argument('--re_lr',      default=2e-5, type=float,   help='set fine learning rate')
 parser.add_argument('--alpha',      default=6e-4, type=float,   help='set l2 regularization alpha')
@@ -120,7 +120,7 @@ parser.add_argument('--scratch',    default=False, action='store_true', help='st
 parser.add_argument('--no-cuda',    default=False, action='store_true', help='disables CUDA training')
 args = parser.parse_args()
 print(args)
-comment = "check13_patdnn_resnet"
+comment = "check14_swp_resnet"
 
 if args.exp == 'test':
     args.exp = f'{args.exp}-{time.strftime("%y%m%d-%H%M%S")}'
@@ -187,7 +187,7 @@ model.cuda()
 history_score = np.zeros((200, 2))
 his_idx = 0
 
-print('patdnn')
+print('SWP')
 print('lr:', args.lr, 'rho:', args.rho)
 print('\nTraining...') ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 best_prec = 0
@@ -200,7 +200,7 @@ for epoch in range(1):
     train(args, model, device, pattern_set, train_loader, test_loader, optimizer, Z, Y, U, V)
        
     X = update_X(model)
-    Z = update_Z(X, U, pattern_set, args)
+    Z = update_Z_swp(X, U, pattern_set, args)
     Y = update_Y(X, V, args)
 
     prec = ttest(args, model, device, test_loader, pattern_set, Z, Y, U, V)
@@ -219,7 +219,7 @@ for epoch in range(args.epoch):
     train(args, model, device, pattern_set, train_loader, test_loader, optimizer, Z, Y, U, V)
     
     X = update_X(model)
-    Z = update_Z(X, U, pattern_set, args)
+    Z = update_Z_swp(X, U, pattern_set, args)
     Y = update_Y(X, V, args)
     U = update_U(U, X, Z)
     V = update_V(V, X, Y)
@@ -235,7 +235,7 @@ torch.save(model.state_dict(), os.path.join(args.save, 'cifar10_before.pth.tar')
 
 # Real Pruning ! ! !
 print("\nApply Pruning with connectivity & pattern set...")
-mask = apply_prune(args, model, device, pattern_set)
+mask = apply_prune_swp(args, model, device, pattern_set)
 print_prune(model)
 
 for name, param in model.named_parameters():
@@ -273,7 +273,7 @@ for epoch in range(args.re_epoch):
 
 np.savetxt(os.path.join(args.save, 'train_record.txt'), history_score, fmt='%10.5f', delimiter=',')
 
-print('patdnn lr:', args.lr, 'rho:', args.rho)
+print('SWP lr:', args.lr, 'rho:', args.rho)
 
 ############################################
 
